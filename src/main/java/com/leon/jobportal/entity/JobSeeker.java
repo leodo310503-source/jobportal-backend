@@ -20,5 +20,15 @@ public class JobSeeker {
 
     private String fullName;
     private String phone;
+
+    @Column(columnDefinition = "TEXT")
+    private String skills;
+
+    @Column(columnDefinition = "TEXT")
+    private String experience;
+
+    @Column(columnDefinition = "TEXT")
+    private String education;
+
     private String cvUrl;
 }

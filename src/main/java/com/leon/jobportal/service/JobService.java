@@ -9,6 +9,10 @@ import com.leon.jobportal.repository.EmployerRepository;
 import com.leon.jobportal.repository.JobRepository;
 import com.leon.jobportal.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -85,5 +89,11 @@ public class JobService {
         }
 
         jobRepository.delete(job);
+    }
+
+    public Page<Job> searchJobs(String keyword, String location,
+                                String salary, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size); // bỏ Sort đi
+        return jobRepository.searchJobs(keyword, location, salary, pageable);
     }
 }
