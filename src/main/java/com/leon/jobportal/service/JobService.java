@@ -12,12 +12,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -30,10 +28,8 @@ public class JobService {
     private Employer getCurrentEmployer() {
         String email = SecurityContextHolder.getContext()
                 .getAuthentication().getName();
-
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
         return employerRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new RuntimeException("Employer profile not found"));
     }
@@ -54,8 +50,9 @@ public class JobService {
         return jobRepository.save(job);
     }
 
-    public List<Job> getAllJobs() {
-        return jobRepository.findAll();
+    public Page<Job> getAllJobs(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return jobRepository.findAll(pageable);
     }
 
     public Job getJobById(Long id) {
@@ -93,7 +90,7 @@ public class JobService {
 
     public Page<Job> searchJobs(String keyword, String location,
                                 String salary, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size); // bỏ Sort đi
+        Pageable pageable = PageRequest.of(page, size);
         return jobRepository.searchJobs(keyword, location, salary, pageable);
     }
 }

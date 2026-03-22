@@ -48,4 +48,13 @@ public class EmployerService {
         return employerRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new RuntimeException("Profile not found"));
     }
+
+    public Employer updateProfile(EmployerDTO dto) {
+        Employer employer = getProfile();
+        employer.setCompanyName(dto.getCompanyName());
+        employer.setCompanyAddress(dto.getCompanyAddress());
+        employer.setCompanyDescription(dto.getCompanyDescription());
+        employer.setWebsite(dto.getWebsite());
+        return employerRepository.save(employer);
+    }
 }

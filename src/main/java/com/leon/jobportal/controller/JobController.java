@@ -3,12 +3,12 @@ package com.leon.jobportal.controller;
 import com.leon.jobportal.dto.JobDTO;
 import com.leon.jobportal.entity.Job;
 import com.leon.jobportal.service.JobService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/jobs")
@@ -18,13 +18,16 @@ public class JobController {
     private final JobService jobService;
 
     @PostMapping
-    public ResponseEntity<Job> createJob(@RequestBody JobDTO dto) {
+    @PreAuthorize("hasRole('EMPLOYER')")
+    public ResponseEntity<Job> createJob(@Valid @RequestBody JobDTO dto) {
         return ResponseEntity.ok(jobService.createJob(dto));
     }
 
     @GetMapping
-    public ResponseEntity<List<Job>> getAllJobs() {
-        return ResponseEntity.ok(jobService.getAllJobs());
+    public ResponseEntity<Page<Job>> getAllJobs(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(jobService.getAllJobs(page, size));
     }
 
     @GetMapping("/search")
@@ -43,12 +46,14 @@ public class JobController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('EMPLOYER')")
     public ResponseEntity<Job> updateJob(@PathVariable Long id,
-                                         @RequestBody JobDTO dto) {
+                                         @Valid @RequestBody JobDTO dto) {
         return ResponseEntity.ok(jobService.updateJob(id, dto));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('EMPLOYER')")
     public ResponseEntity<Void> deleteJob(@PathVariable Long id) {
         jobService.deleteJob(id);
         return ResponseEntity.noContent().build();

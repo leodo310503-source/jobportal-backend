@@ -94,7 +94,11 @@ public class ApplicationService {
             throw new RuntimeException("You are not allowed to update this application");
         }
 
-        application.setStatus(ApplicationStatus.valueOf(status));
+        try {
+            application.setStatus(ApplicationStatus.valueOf(status.toUpperCase()));
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Status không hợp lệ. Chỉ chấp nhận: PENDING, ACCEPTED, REJECTED");
+        }
         return applicationRepository.save(application);
     }
 }
