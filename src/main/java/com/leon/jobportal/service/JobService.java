@@ -1,5 +1,6 @@
 package com.leon.jobportal.service;
 
+import com.leon.jobportal.exception.*;
 import com.leon.jobportal.dto.JobDTO;
 import com.leon.jobportal.entity.Employer;
 import com.leon.jobportal.entity.Job;
@@ -29,9 +30,9 @@ public class JobService {
         String email = SecurityContextHolder.getContext()
                 .getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng"));
         return employerRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new RuntimeException("Employer profile not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Vui lòng tạo hồ sơ nhà tuyển dụng trước"));
     }
 
     public Job createJob(JobDTO dto) {
@@ -52,12 +53,13 @@ public class JobService {
 
     public Page<Job> getAllJobs(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return jobRepository.findAll(pageable);
+        // Chỉ trả về job đang OPEN
+        return jobRepository.findByStatus(JobStatus.OPEN, pageable);
     }
 
     public Job getJobById(Long id) {
         return jobRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Job not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tin tuyển dụng với id: " + id));
     }
 
     public Job updateJob(Long id, JobDTO dto) {
@@ -65,7 +67,7 @@ public class JobService {
         Employer employer = getCurrentEmployer();
 
         if (!job.getEmployer().getId().equals(employer.getId())) {
-            throw new RuntimeException("You are not allowed to update this job");
+            throw new ForbiddenException("Bạn không có quyền chỉnh sửa tin tuyển dụng này");
         }
 
         job.setTitle(dto.getTitle());
@@ -82,7 +84,7 @@ public class JobService {
         Employer employer = getCurrentEmployer();
 
         if (!job.getEmployer().getId().equals(employer.getId())) {
-            throw new RuntimeException("You are not allowed to delete this job");
+            throw new ForbiddenException("Bạn không có quyền xóa tin tuyển dụng này");
         }
 
         jobRepository.delete(job);

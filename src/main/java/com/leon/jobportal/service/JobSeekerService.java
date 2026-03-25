@@ -1,5 +1,6 @@
 package com.leon.jobportal.service;
 
+import com.leon.jobportal.exception.*;
 import com.leon.jobportal.dto.JobSeekerDTO;
 import com.leon.jobportal.entity.JobSeeker;
 import com.leon.jobportal.entity.User;
@@ -20,14 +21,14 @@ public class JobSeekerService {
         String email = SecurityContextHolder.getContext()
                 .getAuthentication().getName();
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
     public JobSeeker createProfile(JobSeekerDTO dto) {
         User user = getCurrentUser();
 
         if (jobSeekerRepository.existsByUserId(user.getId())) {
-            throw new RuntimeException("Profile already exists");
+            throw new ConflictException("Jobseeker profile already exists");
         }
 
         JobSeeker jobSeeker = new JobSeeker();
@@ -44,7 +45,7 @@ public class JobSeekerService {
     public JobSeeker getProfile() {
         User user = getCurrentUser();
         return jobSeekerRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new RuntimeException("Profile not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Jobseeker profile not found"));
     }
 
     public JobSeeker updateProfile(JobSeekerDTO dto) {

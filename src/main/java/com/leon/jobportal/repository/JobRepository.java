@@ -1,6 +1,7 @@
 package com.leon.jobportal.repository;
 
 import com.leon.jobportal.entity.Job;
+import com.leon.jobportal.entity.JobStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -31,4 +32,5 @@ public interface JobRepository extends JpaRepository<Job, Long> {
                          @Param("location") String location,
                          @Param("salary") String salary,
                          Pageable pageable);
+    Page<Job> findByStatus(JobStatus status, Pageable pageable);
 }

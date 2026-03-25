@@ -1,5 +1,6 @@
 package com.leon.jobportal.service;
 
+import com.leon.jobportal.exception.*;
 import com.leon.jobportal.entity.*;
 import com.leon.jobportal.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -23,25 +24,24 @@ public class ApplicationService {
         String email = SecurityContextHolder.getContext()
                 .getAuthentication().getName();
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
-    // JobSeeker apply job
     public Application applyJob(Long jobId) {
         User user = getCurrentUser();
 
         JobSeeker jobSeeker = jobSeekerRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new RuntimeException("Please create your profile first"));
+                .orElseThrow(() -> new ResourceNotFoundException("Please create your profile first"));
 
         Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new RuntimeException("Job not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Job not found with id: " + jobId));
 
         if (job.getStatus() == JobStatus.CLOSED) {
-            throw new RuntimeException("This job is closed");
+            throw new BadRequestException("This job is closed");
         }
 
         if (applicationRepository.existsByJobIdAndJobSeekerId(jobId, jobSeeker.getId())) {
-            throw new RuntimeException("You already applied for this job");
+            throw new ConflictException("You have already applied for this job");
         }
 
         Application application = new Application();
@@ -53,52 +53,50 @@ public class ApplicationService {
         return applicationRepository.save(application);
     }
 
-    // JobSeeker xem lịch sử apply
     public List<Application> getMyApplications() {
         User user = getCurrentUser();
 
         JobSeeker jobSeeker = jobSeekerRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new RuntimeException("Profile not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Jobseeker profile not found"));
 
         return applicationRepository.findByJobSeekerId(jobSeeker.getId());
     }
 
-    // Employer xem danh sách ứng viên của job
     public List<Application> getApplicationsByJob(Long jobId) {
         User user = getCurrentUser();
 
         Employer employer = employerRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new RuntimeException("Employer profile not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Employer profile not found"));
 
         Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new RuntimeException("Job not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Job not found with id: " + jobId));
 
         if (!job.getEmployer().getId().equals(employer.getId())) {
-            throw new RuntimeException("You are not allowed to view this job's applications");
+            throw new ForbiddenException("You are not allowed to view this job's applications");
         }
 
         return applicationRepository.findByJobId(jobId);
     }
 
-    // Employer cập nhật trạng thái ứng viên
     public Application updateStatus(Long applicationId, String status) {
         User user = getCurrentUser();
 
         Employer employer = employerRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new RuntimeException("Employer profile not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Employer profile not found"));
 
         Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> new RuntimeException("Application not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Application not found with id: " + applicationId));
 
         if (!application.getJob().getEmployer().getId().equals(employer.getId())) {
-            throw new RuntimeException("You are not allowed to update this application");
+            throw new ForbiddenException("You are not allowed to update this application");
         }
 
         try {
             application.setStatus(ApplicationStatus.valueOf(status.toUpperCase()));
         } catch (IllegalArgumentException e) {
-            throw new RuntimeException("Status không hợp lệ. Chỉ chấp nhận: PENDING, ACCEPTED, REJECTED");
+            throw new BadRequestException("Invalid status. Accepted values: PENDING, ACCEPTED, REJECTED");
         }
+
         return applicationRepository.save(application);
     }
 }

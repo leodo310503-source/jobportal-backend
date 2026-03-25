@@ -1,5 +1,6 @@
 package com.leon.jobportal.service;
 
+import com.leon.jobportal.exception.*;
 import com.leon.jobportal.dto.EmployerDTO;
 import com.leon.jobportal.entity.Employer;
 import com.leon.jobportal.entity.User;
@@ -16,16 +17,18 @@ public class EmployerService {
     private final EmployerRepository employerRepository;
     private final UserRepository userRepository;
 
-    public Employer createProfile(EmployerDTO dto) {
-        // Lấy email từ token hiện tại
+    private User getCurrentUser() {
         String email = SecurityContextHolder.getContext()
                 .getAuthentication().getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    }
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    public Employer createProfile(EmployerDTO dto) {
+        User user = getCurrentUser();
 
         if (employerRepository.existsByUserId(user.getId())) {
-            throw new RuntimeException("Profile already exists");
+            throw new ConflictException("Employer profile already exists");
         }
 
         Employer employer = new Employer();
@@ -39,14 +42,10 @@ public class EmployerService {
     }
 
     public Employer getProfile() {
-        String email = SecurityContextHolder.getContext()
-                .getAuthentication().getName();
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = getCurrentUser();
 
         return employerRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new RuntimeException("Profile not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Employer profile not found"));
     }
 
     public Employer updateProfile(EmployerDTO dto) {
