@@ -3,6 +3,7 @@ package com.leon.jobportal.service;
 import com.leon.jobportal.dto.AuthResponse;
 import com.leon.jobportal.dto.LoginRequest;
 import com.leon.jobportal.dto.RegisterRequest;
+import com.leon.jobportal.dto.ResetPasswordRequest;
 import com.leon.jobportal.entity.RefreshToken;
 import com.leon.jobportal.entity.Role;
 import com.leon.jobportal.entity.User;
@@ -14,6 +15,7 @@ import com.leon.jobportal.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -52,7 +54,7 @@ public class AuthService {
         }
 
         // Kiểm tra tài khoản đã verify chưa
-        if (!user.isVerified()) {
+        if (!user.getVerified()) {
             throw new BadRequestException("Please verify your email before logging in");
         }
 
@@ -66,13 +68,33 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Email not found"));
 
-        if (user.isVerified()) {
+        if (user.getVerified()) {
             throw new BadRequestException("Email already verified");
         }
 
         otpService.verifyOtp(user, otp);
 
         user.setVerified(true);
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void forgotPassword(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Email not found"));
+
+        otpService.generateAndSendOtp(user);
+    }
+
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("Email not found"));
+
+        otpService.verifyOtp(user, request.getOtp());
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setVerified(true); // thêm dòng này
         userRepository.save(user);
     }
 }

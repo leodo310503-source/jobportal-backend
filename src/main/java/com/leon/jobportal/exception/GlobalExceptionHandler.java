@@ -49,7 +49,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiException> handleException(Exception e) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiException(500, "Lỗi hệ thống, vui lòng thử lại sau", LocalDateTime.now()));
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiException(500, e.getMessage(), LocalDateTime.now()));
     }
 }

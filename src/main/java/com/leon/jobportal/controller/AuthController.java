@@ -3,6 +3,7 @@ package com.leon.jobportal.controller;
 import com.leon.jobportal.dto.AuthResponse;
 import com.leon.jobportal.dto.LoginRequest;
 import com.leon.jobportal.dto.RegisterRequest;
+import com.leon.jobportal.dto.ResetPasswordRequest;
 import com.leon.jobportal.entity.RefreshToken;
 import com.leon.jobportal.entity.User;
 import com.leon.jobportal.exception.ResourceNotFoundException;
@@ -63,6 +64,18 @@ public class AuthController {
                 user.getEmail(),
                 user.getRole().name()
         ));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@RequestParam String email) {
+        authService.forgotPassword(email);
+        return ResponseEntity.ok("OTP sent to your email");
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok("Password reset successfully");
     }
 
     @PostMapping("/logout")
