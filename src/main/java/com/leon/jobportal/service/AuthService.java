@@ -23,6 +23,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final RefreshTokenService refreshTokenService;
+    private final OtpService otpService;
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -33,12 +34,13 @@ public class AuthService {
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(Role.valueOf(request.getRole()));
+        user.setVerified(false);
         userRepository.save(user);
 
-        String accessToken = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
-        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
+        // Gửi OTP sau khi đăng ký
+        otpService.generateAndSendOtp(user);
 
-        return new AuthResponse(accessToken, refreshToken.getToken(), user.getEmail(), user.getRole().name());
+        return new AuthResponse(null, null, user.getEmail(), user.getRole().name());
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -49,9 +51,28 @@ public class AuthService {
             throw new BadRequestException("Invalid password");
         }
 
+        // Kiểm tra tài khoản đã verify chưa
+        if (!user.isVerified()) {
+            throw new BadRequestException("Please verify your email before logging in");
+        }
+
         String accessToken = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
 
         return new AuthResponse(accessToken, refreshToken.getToken(), user.getEmail(), user.getRole().name());
+    }
+
+    public void verifyEmail(String email, String otp) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Email not found"));
+
+        if (user.isVerified()) {
+            throw new BadRequestException("Email already verified");
+        }
+
+        otpService.verifyOtp(user, otp);
+
+        user.setVerified(true);
+        userRepository.save(user);
     }
 }

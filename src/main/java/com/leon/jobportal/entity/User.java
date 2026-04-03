@@ -24,4 +24,7 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     private Role role; // JOBSEEKER, EMPLOYER, ADMIN
+
+    @Column(nullable = false)
+    private boolean isVerified = false;
 }
